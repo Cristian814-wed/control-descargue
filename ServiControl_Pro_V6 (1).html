@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ServiControl Pro V5 - Servientrega</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow+Condensed:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--green:#009639;--green-dark:#007a2e;--red:#dc2626;--black:#0a0a0a;--bg:#f0f4f2;--shadow:0 4px 24px rgba(0,0,0,.07);--pkg:#d2a679;}
+*{box-sizing:border-box;}
+body{font-family:'Barlow Condensed',sans-serif;background:var(--bg);margin:0;overflow-x:hidden;color:var(--black);}
+.fo{font-family:'Oswald',sans-serif;} .fm{font-family:'JetBrains Mono',monospace;}
+
+/* ===== LOGIN ===== */
+#loginScreen{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:#0d1f0d;overflow:hidden;}
+#loginScreen::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,40,15,.85) 0%,rgba(0,80,30,.65) 50%,rgba(0,40,15,.85) 100%);z-index:1;}
+.lp{position:absolute;border-radius:50%;background:radial-gradient(circle,rgba(0,180,65,.15) 0%,transparent 70%);animation:lpf linear infinite;pointer-events:none;z-index:2;}
+@keyframes lpf{0%{transform:translateY(100vh) scale(.5);opacity:0;}10%{opacity:1;}90%{opacity:.6;}100%{transform:translateY(-10vh) scale(1.2);opacity:0;}}
+.lcard{position:relative;z-index:10;background:rgba(255,255,255,.10);backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);border:1px solid rgba(255,255,255,.22);border-radius:24px;padding:44px 40px 36px;width:420px;max-width:95vw;box-shadow:0 32px 80px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.08) inset;animation:lcardIn .6s cubic-bezier(.175,.885,.32,1.275) forwards;}
+@keyframes lcardIn{0%{opacity:0;transform:translateY(40px) scale(.96);}100%{opacity:1;transform:translateY(0) scale(1);}}
+.ll{font-size:10px;font-weight:800;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:2px;display:flex;align-items:center;gap:6px;margin-bottom:8px;}
+.liw{position:relative;margin-bottom:20px;}
+.li{width:100%;padding:14px 16px 14px 44px;background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.18);border-radius:14px;color:white;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:600;outline:none;transition:all .25s;}
+.li::placeholder{color:rgba(255,255,255,.35);}
+.li:focus{border-color:rgba(0,200,80,.6);background:rgba(255,255,255,.16);box-shadow:0 0 0 4px rgba(0,180,65,.15);}
+.lil{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.4);pointer-events:none;}
+.ley{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:rgba(255,255,255,.4);transition:color .2s;padding:2px;}
+.ley:hover{color:rgba(255,255,255,.8);}
+.lbtn{width:100%;padding:16px;background:linear-gradient(135deg,#009639 0%,#007a2e 100%);color:white;border:none;border-radius:14px;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 24px rgba(0,150,57,.45);transition:all .25s;margin-top:6px;}
+.lbtn:hover{transform:translateY(-2px);box-shadow:0 10px 32px rgba(0,150,57,.55);filter:brightness(1.08);}
+.ldiv{display:flex;align-items:center;gap:12px;margin:24px 0 18px;}
+.ldiv::before,.ldiv::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.15);}
+.ldiv span{font-size:11px;color:rgba(255,255,255,.35);font-weight:700;letter-spacing:1px;}
+.lerr{background:rgba(220,38,38,.2);border:1px solid rgba(220,38,38,.4);color:#fca5a5;border-radius:10px;padding:10px 14px;font-size:13px;font-weight:700;margin-bottom:16px;display:none;text-align:center;}
+.lbot{display:flex;justify-content:space-between;align-items:center;margin-top:28px;padding-top:18px;border-top:1px solid rgba(255,255,255,.1);font-size:10px;color:rgba(255,255,255,.3);font-weight:700;letter-spacing:1px;}
+.ldot{width:6px;height:6px;border-radius:50%;background:#00e05a;display:inline-block;margin-right:5px;box-shadow:0 0 6px #00e05a;}
+
+/* ===== SYNC BADGE ===== */
+#syncBadge{display:none;align-items:center;gap:6px;background:rgba(0,150,57,.15);border:1px solid rgba(0,150,57,.3);border-radius:20px;padding:4px 12px;font-size:10px;font-weight:800;color:rgba(255,255,255,.8);letter-spacing:1px;text-transform:uppercase;}
+.sdot{width:7px;height:7px;border-radius:50%;background:#00e05a;box-shadow:0 0 6px #00e05a;animation:sp 2s ease-in-out infinite;}
+@keyframes sp{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(.85);}}
+
+/* ===== HEADER ===== */
+.hdr{background:linear-gradient(135deg,#005a22 0%,#009639 60%,#00b341 100%);height:72px;display:flex;align-items:center;padding:0 28px;color:white;border-bottom:4px solid #004d1c;box-shadow:0 4px 20px rgba(0,0,0,.3);}
+
+/* ===== SIDEBAR ===== */
+#sidebar{transition:all .35s cubic-bezier(.4,0,.2,1);width:300px;background:linear-gradient(180deg,#005a22 0%,#007a2e 100%);}
+.shide{width:0!important;overflow:hidden;}
+
+/* ===== TRUCK ===== */
+.lscene{background:linear-gradient(135deg,#e8f5ee 0%,#d4eddf 100%);border:1px solid #b2d8c0;border-radius:14px;width:100%;height:110px;position:relative;overflow:hidden;}
+.road{position:absolute;bottom:0;left:0;right:0;height:28px;background:#334155;}
+.rline{position:absolute;bottom:12px;left:0;right:0;height:4px;background:repeating-linear-gradient(90deg,#f1f5f9 0 30px,transparent 30px 60px);animation:rs .4s linear infinite;}
+@keyframes rs{from{background-position:0 0;}to{background-position:-60px 0;}}
+.conv{position:absolute;bottom:28px;left:10px;width:62%;height:16px;background:#475569;border-radius:8px;overflow:hidden;}
+.coni{width:100%;height:100%;background:repeating-linear-gradient(90deg,#475569 0 12px,#334155 12px 14px);animation:bm .35s linear infinite;}
+@keyframes bm{from{background-position:0;}to{background-position:-14px 0;}}
+.pk{position:absolute;bottom:44px;width:28px;height:24px;background:var(--pkg);border:2px solid #b8895e;border-radius:3px;opacity:0;}
+.pk::after{content:'+';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:12px;color:#8b5e3c;font-weight:900;}
+.pk1{animation:pf 2.4s linear infinite 0s;}.pk2{animation:pf 2.4s linear infinite .8s;}.pk3{animation:pf 2.4s linear infinite 1.6s;}
+@keyframes pf{0%{left:62%;opacity:0;}8%{opacity:1;}70%{opacity:1;}85%{opacity:.6;transform:translateY(3px);}100%{left:2%;opacity:0;transform:translateY(0);}}
+.trw{position:absolute;right:8px;bottom:28px;width:130px;height:70px;animation:ti .25s ease-in-out infinite;}
+@keyframes ti{0%,100%{transform:translateY(0);}50%{transform:translateY(-2px);}}
+.tch{position:absolute;bottom:0;left:0;width:128px;height:8px;background:#1e293b;border-radius:3px;}
+.ttr{position:absolute;bottom:8px;left:0;width:86px;height:52px;background:linear-gradient(180deg,var(--green) 0%,var(--green-dark) 100%);border-radius:5px 5px 3px 3px;border:1.5px solid var(--green-dark);}
+.ttrl{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Oswald',sans-serif;font-size:9px;font-weight:700;color:rgba(255,255,255,.7);letter-spacing:2px;}
+.ttrs{position:absolute;bottom:0;left:0;right:0;height:8px;background:rgba(0,0,0,.2);border-radius:0 0 3px 3px;}
+.tcb{position:absolute;bottom:8px;left:88px;width:38px;height:44px;background:linear-gradient(135deg,var(--green) 0%,var(--green-dark) 100%);border-radius:3px 14px 3px 3px;border:1.5px solid var(--green-dark);}
+.twin{position:absolute;top:5px;left:4px;width:22px;height:16px;background:linear-gradient(135deg,#bae6fd 0%,#7dd3fc 100%);border-radius:2px 10px 2px 2px;border:1px solid rgba(255,255,255,.5);}
+.twin::after{content:'';position:absolute;top:2px;left:2px;width:6px;height:10px;background:rgba(255,255,255,.35);border-radius:1px;}
+.tgr{position:absolute;bottom:4px;right:3px;width:10px;height:14px;background:repeating-linear-gradient(0deg,#1e293b 0 2px,#334155 2px 4px);border-radius:1px;}
+.tlt{position:absolute;bottom:8px;right:0;width:5px;height:8px;background:#fde047;border-radius:0 2px 2px 0;animation:lp2 1.5s ease-in-out infinite;box-shadow:0 0 6px #fde047;}
+@keyframes lp2{0%,100%{opacity:1;}50%{opacity:.6;}}
+.tex{position:absolute;top:2px;left:90px;width:5px;height:10px;background:#334155;border-radius:2px 2px 0 0;}
+.tsm{position:absolute;top:-4px;left:88px;width:10px;height:10px;background:rgba(100,100,100,.3);border-radius:50%;animation:su 1.2s ease-out infinite;}
+@keyframes su{0%{transform:translateY(0) scale(.5);opacity:.5;}100%{transform:translateY(-14px) scale(1.5);opacity:0;}}
+.twh{position:absolute;bottom:-2px;width:22px;height:22px;background:#0f172a;border-radius:50%;border:3px solid #334155;overflow:hidden;}
+.twh::after{content:'';position:absolute;top:50%;left:50%;width:8px;height:8px;background:#475569;border-radius:50%;transform:translate(-50%,-50%);animation:ws .3s linear infinite;}
+@keyframes ws{from{transform:translate(-50%,-50%) rotate(0deg);}to{transform:translate(-50%,-50%) rotate(360deg);}}
+.wh1{left:6px;}.wh2{left:54px;}.wh3{right:10px;}
+
+/* ===== BOTONES ===== */
+.btn{background:linear-gradient(135deg,var(--green) 0%,var(--green-dark) 100%);color:white;transition:all .25s;text-transform:uppercase;font-weight:800;font-family:'Barlow Condensed',sans-serif;letter-spacing:1.5px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,150,57,.3);border:none;cursor:pointer;}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,150,57,.4);filter:brightness(1.05);}
+.btn:active{transform:translateY(0);}
+.bdis{opacity:.38!important;cursor:not-allowed!important;pointer-events:none!important;}
+
+/* ===== MODALS ===== */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(6px);}
+.mcard{background:white;border-radius:24px;padding:36px;width:90%;max-width:460px;border-bottom:6px solid var(--green);}
+
+/* ===== TOAST ===== */
+#toast{position:fixed;top:90px;left:50%;transform:translateX(-50%) translateY(-20px);z-index:9998;background:linear-gradient(135deg,#dc2626,#991b1b);color:white;padding:18px 32px;border-radius:16px;max-width:660px;width:92%;box-shadow:0 8px 32px rgba(220,38,38,.5);opacity:0;transition:all .5s;font-size:15px;font-weight:700;text-align:center;letter-spacing:.5px;border:2px solid rgba(255,255,255,.2);}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ===== KPI BOXES — más grandes y visibles ===== */
+.kbox{background:white;border-radius:18px;padding:20px 24px;border:1.5px solid #e5e7eb;box-shadow:var(--shadow);}
+.knum{font-size:3.2rem;font-weight:900;font-family:'Oswald',sans-serif;line-height:1;letter-spacing:-1px;}
+.klbl{font-size:10px;font-weight:800;color:#9ca3af;text-transform:uppercase;letter-spacing:2px;display:block;margin-bottom:6px;}
+
+/* ===== CARDS OPERATIVOS ===== */
+.ocard{background:white;border-radius:20px;box-shadow:var(--shadow);border:1.5px solid #e5e7eb;transition:box-shadow .2s;overflow:hidden;display:flex;flex-direction:column;}
+.ocard:hover{box-shadow:0 8px 32px rgba(0,0,0,.1);}
+.cinef{border-top:5px solid var(--red)!important;}
+.ceff{border-top:5px solid var(--green)!important;}
+.ered{color:var(--red)!important;} .egreen{color:var(--green)!important;}
+.bred{background:linear-gradient(90deg,#dc2626,#ef4444)!important;}
+.bgreen{background:linear-gradient(90deg,var(--green-dark),var(--green))!important;}
+
+/* ===== GRID AUTOAJUSTABLE ===== */
+/* 1 tarjeta → centrada ancha */
+#opGrid.g1{display:flex;justify-content:center;}
+#opGrid.g1 .ocard{width:min(520px,100%);}
+/* 2 tarjetas */
+#opGrid.g2{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;max-width:900px;margin:0 auto;}
+/* 3 tarjetas */
+#opGrid.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+/* 4+ tarjetas */
+#opGrid.g4{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px;}
+
+.flbl{font-size:9px;font-weight:800;color:#9ca3af;text-transform:uppercase;letter-spacing:1.5px;display:block;margin-bottom:3px;}
+.pbar{background:#f1f5f9;border-radius:10px;height:12px;overflow:hidden;}
+.pfill{height:100%;border-radius:10px;transition:width 1s ease;}
+.pbadge{background:var(--black);color:white;font-size:13px;font-weight:900;padding:5px 14px;border-radius:9px;letter-spacing:2px;font-family:'JetBrains Mono',monospace;}
+.vbadge{background:#f3f4f6;color:#6b7280;font-size:11px;font-weight:700;padding:3px 9px;border-radius:5px;text-transform:uppercase;letter-spacing:1px;}
+.wbadge{background:#fef2f2;color:var(--red);font-size:10px;font-weight:800;padding:3px 8px;border-radius:6px;letter-spacing:1px;border:1px solid #fca5a5;}
+.trow{display:flex;align-items:center;justify-content:space-between;background:#f8fafc;border-radius:12px;padding:10px 14px;margin:10px 0;gap:8px;}
+.tblk{text-align:center;flex:1;}
+.tdiv{width:1px;height:32px;background:#e5e7eb;}
+.rbadge-a{background:#fef3c7;color:#b45309;font-size:9px;font-weight:800;padding:3px 8px;border-radius:6px;border:1px solid #fde68a;}
+.rbadge-v{background:#eff6ff;color:#2563eb;font-size:9px;font-weight:800;padding:3px 8px;border-radius:6px;border:1px solid #bfdbfe;}
+
+.fi{padding:14px 16px;font-size:15px;font-weight:700;border:2px solid #e5e7eb;border-radius:14px;background:#f9fafb;outline:none;transition:all .2s;font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;width:100%;}
+.fi:focus{border-color:var(--green);background:white;box-shadow:0 0 0 4px rgba(0,150,57,.08);}
+
+/* Fin de día */
+.endcard{background:white;border-radius:40px;padding:56px 40px;text-align:center;border:4px dashed var(--green);box-shadow:0 24px 60px rgba(0,0,0,.08);}
+.hcard{background:white;border-radius:18px;padding:28px;box-shadow:var(--shadow);border-top:5px solid var(--green);}
+.htbox{border:2px dashed var(--green);border-radius:12px;padding:12px;}
+
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-12px);}}
+@keyframes popIn{0%{transform:scale(0);opacity:0;}80%{transform:scale(1.05);}100%{transform:scale(1);opacity:1;}}
+@keyframes slideUp{0%{transform:translateY(40px);opacity:0;}100%{transform:translateY(0);opacity:1;}}
+@keyframes glow{0%,100%{box-shadow:0 0 0 rgba(0,150,57,0);}50%{box-shadow:0 0 24px rgba(0,150,57,.25);}}
+@keyframes fall{0%{transform:translateY(-10vh) rotate(0);opacity:1;}100%{transform:translateY(110vh) rotate(720deg);opacity:0;}}
+.af{animation:float 3.5s ease-in-out infinite;}
+.ap{animation:popIn .7s cubic-bezier(.175,.885,.32,1.275) forwards;}
+.as{opacity:0;animation:slideUp .7s ease-out forwards;}
+.ag{animation:glow 3s infinite;}
+.conf{position:fixed;width:9px;height:9px;top:-10px;z-index:0;pointer-events:none;animation:fall 4s linear forwards;}
+
+::-webkit-scrollbar{width:6px;}
+::-webkit-scrollbar-thumb{background:#c9d5cc;border-radius:10px;}
+@media(max-width:768px){#opGrid.g2,#opGrid.g3,#opGrid.g4{grid-template-columns:1fr;}.lcard{padding:32px 24px 28px;}}
+</style>
+</head>
+<body>
+
+<!-- =================== LOGIN =================== -->
+<div id="loginScreen">
+  <div class="lp" style="width:300px;height:300px;left:-80px;bottom:-80px;animation-duration:18s"></div>
+  <div class="lp" style="width:200px;height:200px;right:10%;top:20%;animation-duration:14s;animation-delay:2s"></div>
+  <div class="lp" style="width:150px;height:150px;left:30%;bottom:10%;animation-duration:20s;animation-delay:5s"></div>
+  <div class="lp" style="width:250px;height:250px;right:-50px;bottom:30%;animation-duration:16s;animation-delay:1s"></div>
+  <div class="lcard">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:32px">
+      <div style="width:50px;height:50px;background:linear-gradient(135deg,#009639,#00b341);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;color:white;font-family:'Oswald',sans-serif;box-shadow:0 6px 20px rgba(0,150,57,.5);flex-shrink:0">S</div>
+      <div>
+        <div style="font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:white;line-height:1.1">Servientrega</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-top:2px">Centro de Control Operacional</div>
+      </div>
+    </div>
+    <div id="lerr" class="lerr">Usuario o contraseña incorrectos.</div>
+    <div class="ll"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>USUARIO</div>
+    <div class="liw">
+      <svg class="lil" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <input id="luser" type="text" class="li" placeholder="Ej: ADMIN" autocomplete="username">
+    </div>
+    <div class="ll"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>CONTRASEÑA</div>
+    <div class="liw">
+      <svg class="lil" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      <input id="lpass" type="password" class="li" placeholder="••••••••" autocomplete="current-password">
+      <button class="ley" onclick="togglePwd()" tabindex="-1">
+        <svg id="eyeIco" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+    <button class="lbtn" id="lbtn" onclick="doLogin()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+      INGRESAR AL SISTEMA
+    </button>
+    <div class="ldiv"><span>o</span></div>
+    <div style="text-align:center;font-size:12px;color:rgba(255,255,255,.4);font-weight:600"><a style="color:rgba(255,255,255,.55);cursor:pointer">¿Olvidaste tu contraseña?</a> · <a style="color:rgba(255,255,255,.55);cursor:pointer">Contactar soporte</a></div>
+    <div class="lbot"><span><span class="ldot"></span>Conexión segura SSL</span><span id="lsid">SID-XXXXXXXX</span></div>
+  </div>
+</div>
+
+<!-- =================== APP =================== -->
+<div id="appScreen" style="display:none" class="flex h-screen overflow-hidden">
+  <div id="confC" class="fixed inset-0 pointer-events-none z-0"></div>
+  <div id="toast"><div id="toastMsg"></div></div>
+
+  <!-- Confirm Modal -->
+  <div id="cModal" class="overlay">
+    <div class="mcard" style="text-align:center">
+      <div id="mIcon" class="flex justify-center mb-5"></div>
+      <h3 id="mTitle" class="fo text-2xl font-black text-gray-800 uppercase mb-2"></h3>
+      <p id="mMsg" class="text-gray-500 font-semibold mb-7 text-sm"></p>
+      <div class="flex space-x-3">
+        <button onclick="closeModal()" class="flex-1 bg-gray-100 text-gray-500 py-4 rounded-2xl font-bold hover:bg-gray-200 transition uppercase text-xs tracking-widest">CANCELAR</button>
+        <button id="mOk" class="flex-1 btn py-4 rounded-2xl text-xs tracking-widest">ACEPTAR</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Modal — Completo: placa, operativo, tipo, persona, aux, piezas -->
+  <div id="eModal" class="overlay">
+    <div class="mcard" style="max-width:500px">
+      <h3 class="fo text-xl font-bold uppercase mb-5 text-gray-800 flex items-center gap-2">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--green)"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Editar Operativo
+      </h3>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="flbl mb-1">Ciudad / Operativo</label><input id="eName" class="fi" placeholder="BOGOTÁ"></div>
+        <div><label class="flbl mb-1">Placa</label><input id="ePlate" class="fi" placeholder="EYX002"></div>
+        <div><label class="flbl mb-1">Tipo de Vehículo</label>
+          <select id="eVehicle" class="fi">
+            <option value="Sencillo">Sencillo</option>
+            <option value="Tractomula">Tractomula</option>
+          </select>
+        </div>
+        <div><label class="flbl mb-1">Persona a Cargo</label><input id="ePerson" class="fi" placeholder="JOSEFA"></div>
+        <div><label class="flbl mb-1">Auxiliares</label><input id="eAux" type="number" class="fi" placeholder="5"></div>
+        <div><label class="flbl mb-1">Piezas Totales</label><input id="eTotal" type="number" class="fi" placeholder="1800"></div>
+        <div class="col-span-2"><label class="flbl mb-1">Hora de Inicio del Operativo <span style="color:#9ca3af;font-weight:600;text-transform:none;font-size:10px">(Opcional — edita si se registró incorrectamente)</span></label><input id="eStartTime" type="time" class="fi" style="text-transform:none"></div>
+      </div>
+      <div class="flex gap-3 mt-5">
+        <button onclick="closeEditModal()" class="flex-1 bg-gray-100 text-gray-500 py-3 rounded-2xl font-bold text-xs uppercase hover:bg-gray-200 transition">CANCELAR</button>
+        <button onclick="saveEdit()" class="flex-1 btn py-3 rounded-2xl text-xs uppercase">GUARDAR CAMBIOS</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar" class="h-full text-white flex flex-col z-50 shadow-2xl shrink-0">
+    <div class="p-5 flex justify-between items-center" style="border-bottom:1px solid rgba(255,255,255,.15)">
+      <div>
+        <span class="fo text-lg font-bold uppercase tracking-wider block">Panel de Control</span>
+        <span style="font-size:9px;opacity:.5;letter-spacing:3px;text-transform:uppercase">Servientrega Pro</span>
+      </div>
+      <button onclick="toggleSidebar()" class="hover:scale-110 transition-transform bg-white/10 rounded-lg p-2"><i data-lucide="chevron-left" size="20"></i></button>
+    </div>
+    <div class="px-4 py-3" style="background:rgba(0,0,0,.2);border-bottom:1px solid rgba(255,255,255,.1)">
+      <div class="flex items-center gap-3">
+        <div id="sAvatar" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px">A</div>
+        <div><p id="sName" class="font-bold text-sm uppercase tracking-wide">ADMIN</p><span id="sRole" class="rbadge-a" style="font-size:9px">ADMINISTRATIVO</span></div>
+      </div>
+    </div>
+    <nav class="flex-1 p-4 space-y-3">
+      <button id="btnAdd" onclick="showSection('new')" class="w-full flex items-center p-4 bg-white/10 hover:bg-white/20 rounded-xl transition-all hover:translate-x-1 text-sm font-bold uppercase tracking-wider"><i data-lucide="plus-circle" class="mr-3" size="18"></i> Agregar Vehículo</button>
+      <button onclick="showSection('pending')" class="w-full flex items-center p-4 bg-white/10 hover:bg-white/20 rounded-xl transition-all hover:translate-x-1 text-sm font-bold uppercase tracking-wider"><i data-lucide="truck" class="mr-3" size="18"></i> Operativos del Día</button>
+      <label id="lblUpload" class="w-full flex items-center p-4 bg-white/10 hover:bg-white/20 rounded-xl cursor-pointer transition-all hover:translate-x-1 text-sm font-bold uppercase tracking-wider">
+        <i data-lucide="upload" class="mr-3" size="18"></i> Cargar Excel
+        <input type="file" id="fileInput" class="hidden" accept=".csv,.xlsx,.xls" onchange="handleFileUpload(event)">
+      </label>
+      <button onclick="showSection('finished')" class="w-full flex items-center p-4 bg-black/20 hover:bg-black/30 rounded-xl transition-all hover:translate-x-1 text-sm font-bold uppercase tracking-wider"><i data-lucide="history" class="mr-3" size="18"></i> Historial</button>
+      <button onclick="doLogout()" class="w-full flex items-center p-4 rounded-xl transition-all hover:translate-x-1 text-sm font-bold uppercase tracking-wider" style="background:rgba(220,38,38,.15);color:#fca5a5;"><i data-lucide="log-out" class="mr-3" size="18"></i> Cerrar Sesión</button>
+    </nav>
+    <div class="p-4 text-center" style="background:rgba(0,0,0,.15)"><p style="font-size:9px;font-weight:900;opacity:.4;letter-spacing:3px;text-transform:uppercase">Monitor de Descargue v5.0</p></div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="flex-1 flex flex-col min-w-0 z-10 overflow-hidden">
+    <header class="hdr justify-between">
+      <div class="flex items-center">
+        <button id="openBtn" onclick="toggleSidebar()" class="mr-3 bg-white/20 p-2 rounded-lg hidden hover:bg-white/30 transition"><i data-lucide="menu" size="20"></i></button>
+        <div onclick="showSection('list')" class="cursor-pointer select-none">
+          <h1 class="fo text-2xl font-bold uppercase tracking-wide leading-none">Monitor de Descargue</h1>
+          <p style="font-size:9px;font-weight:700;opacity:.6;text-transform:uppercase;letter-spacing:3px" class="mt-0.5">Servientrega · En Línea</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div id="syncBadge"><span class="sdot"></span>TIEMPO REAL</div>
+        <div class="hidden md:flex items-center gap-2 bg-white/10 rounded-xl px-3 py-2">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span id="hUser" class="font-bold text-sm uppercase tracking-wider">ADMIN</span>
+          <span id="hRole" style="font-size:9px;background:rgba(0,0,0,.3);border-radius:5px;padding:2px 7px;letter-spacing:1px;font-weight:800">ADMIN</span>
+        </div>
+        <div id="clock" class="fm text-2xl font-bold tracking-wider">00:00:00</div>
+      </div>
+    </header>
+
+    <main class="flex-1 overflow-y-auto p-5 space-y-5">
+
+      <!-- DASHBOARD -->
+      <div id="dashboardContent" class="space-y-5">
+        <!-- KPIs más grandes -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div class="kbox" style="border-left:6px solid var(--green)">
+            <span class="klbl">📦 Piezas Descargadas</span>
+            <div id="kpiTotal" class="knum" style="color:var(--green)">0</div>
+            <p style="font-size:11px;font-weight:700;color:#9ca3af;margin-top:4px;text-transform:uppercase;letter-spacing:1px">Total acumulado</p>
+          </div>
+          <div class="md:col-span-2 bg-white rounded-2xl border-2 border-gray-100 p-2 flex items-center">
+            <div class="lscene">
+              <div class="road"><div class="rline"></div></div>
+              <div class="conv"><div class="coni"></div></div>
+              <div class="pk pk1"></div><div class="pk pk2"></div><div class="pk pk3"></div>
+              <div class="trw">
+                <div class="tch"></div>
+                <div class="ttr"><div class="ttrl">SERVI</div><div class="ttrs"></div></div>
+                <div class="tcb"><div class="twin"></div><div class="tgr"></div><div class="tlt"></div></div>
+                <div class="tex"></div><div class="tsm"></div>
+                <div class="twh wh1"></div><div class="twh wh2"></div><div class="twh wh3"></div>
+              </div>
+            </div>
+          </div>
+          <div class="kbox" style="border-left:6px solid var(--green)">
+            <span class="klbl">⚡ Eficiencia Global</span>
+            <div id="kpiEff" class="knum" style="color:var(--green)">0%</div>
+            <p style="font-size:11px;font-weight:700;color:#9ca3af;margin-top:4px;text-transform:uppercase;letter-spacing:1px">Promedio activos</p>
+          </div>
+        </div>
+        <div id="opGrid"></div>
+      </div>
+
+      <!-- FIN DE DÍA -->
+      <div id="endOfDayMessage" class="hidden max-w-3xl mx-auto mt-8 p-4">
+        <div class="endcard ag ap">
+          <div class="flex justify-center mb-6"><div class="bg-green-50 p-7 rounded-full af"><i data-lucide="check-circle" class="text-green-600" size="72"></i></div></div>
+          <h2 class="fo text-4xl font-bold text-gray-800 mb-4 uppercase as" style="animation-delay:.3s">La operación ha terminado con éxito</h2>
+          <p class="text-xl text-gray-500 mb-10 as" style="animation-delay:.5s">Gracias por su compromiso. Con las mismas energías para mañana.</p>
+          <div class="border-t pt-8 border-gray-100 as" style="animation-delay:.7s">
+            <p class="fo text-3xl font-bold text-green-600 tracking-wider">SERVIENTREGA</p>
+            <p style="font-size:10px;font-weight:700;color:#9ca3af;letter-spacing:5px;text-transform:uppercase" class="mt-1">Mundo de Soluciones</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- PENDIENTES -->
+      <div id="pendingSection" class="hidden space-y-5">
+        <div class="flex justify-between items-center bg-white p-5 rounded-2xl shadow-sm" style="border-left:6px solid var(--green)">
+          <h2 class="fo text-2xl font-bold text-gray-800 uppercase">Operativos del Día</h2>
+          <button onclick="showSection('list')" class="btn px-5 py-2 rounded-xl text-xs h-9"><i data-lucide="arrow-left" class="mr-2" size="14"></i> Volver</button>
+        </div>
+        <div id="pendingGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5"></div>
+      </div>
+
+      <!-- FORMULARIO NUEVO -->
+      <div id="newForm" class="hidden max-w-3xl mx-auto bg-white p-8 rounded-3xl shadow-2xl relative" style="border-top:6px solid var(--green)">
+        <button onclick="showSection('list')" class="absolute top-5 right-5 text-gray-300 hover:text-black hover:scale-110 transition"><i data-lucide="x-circle" size="28"></i></button>
+        <h2 class="fo text-2xl font-bold uppercase mb-6">Registrar Nuevo Vehículo</h2>
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="flbl mb-1">Ciudad / Operativo</label><input id="fName" type="text" placeholder="Ej: BOGOTÁ" class="fi"></div>
+          <div><label class="flbl mb-1">Persona a Cargo</label><input id="fPerson" type="text" placeholder="Ej: JOSEFA" class="fi"></div>
+          <div><label class="flbl mb-1">Piezas Totales</label><input id="fTotal" type="number" placeholder="Ej: 1800" class="fi"></div>
+          <div><label class="flbl mb-1">Auxiliares</label><input id="fAux" type="number" placeholder="Ej: 5" class="fi"></div>
+          <div><label class="flbl mb-1">Tipo de Vehículo</label>
+            <select id="fVehicle" class="fi"><option value="Sencillo">Sencillo</option><option value="Tractomula">Tractomula</option></select>
+          </div>
+          <div><label class="flbl mb-1">Placa</label><input id="fPlate" type="text" placeholder="Ej: EYX002" class="fi"></div>
+          <div class="col-span-2"><label class="flbl mb-1">Hora de Inicio del Operativo <span style="color:#9ca3af;font-weight:600;text-transform:none;font-size:10px">(Opcional — si ya empezó antes de registrarlo)</span></label><input id="fStartTime" type="time" class="fi" style="text-transform:none"></div>
+        </div>
+        <button onclick="saveNew()" class="w-full mt-6 btn p-5 rounded-2xl text-base">AGREGAR A LA LISTA DEL DÍA</button>
+      </div>
+
+      <!-- HISTORIAL -->
+      <div id="finishedSection" class="hidden space-y-5">
+        <div class="flex justify-between items-center bg-white p-5 rounded-2xl shadow-sm" style="border-left:6px solid #0a0a0a">
+          <div>
+            <h2 class="fo text-2xl font-bold text-gray-800 uppercase">Historial de Operaciones</h2>
+            <p style="font-size:9px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:2px">Solo operativos terminados</p>
+          </div>
+          <div class="flex space-x-3">
+            <button id="btnExportPDF" onclick="exportHistorialExcel()" class="btn px-5 py-2 rounded-xl text-xs h-9" style="background:linear-gradient(135deg,#0a0a0a,#334155)">📊 EXPORTAR EXCEL</button>
+            <button id="btnClean" onclick="confirmClearHistory()" class="btn px-5 py-2 rounded-xl text-xs h-9">LIMPIAR HISTORIAL</button>
+            <button onclick="showSection('list')" class="btn px-5 py-2 rounded-xl text-xs h-9"><i data-lucide="arrow-left" class="mr-2" size="14"></i> Volver</button>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="kbox" style="border-left:5px solid var(--green)"><span class="klbl">Tiempo Total</span><div id="kpiTTime" class="knum" style="color:var(--green)">00:00:00</div></div>
+          <div class="kbox" style="border-left:5px solid var(--green)"><span class="klbl">Total Piezas</span><div id="kpiTPieces" class="knum" style="color:var(--green)">0</div></div>
+          <div class="kbox" style="border-left:5px solid var(--green)"><span class="klbl">Eficiencia Final</span><div id="kpiTEff" class="knum" style="color:var(--green)">0%</div></div>
+        </div>
+        <div id="finishedGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5"></div>
+      </div>
+
+      <div id="noData" class="hidden text-center py-20 text-gray-300 font-black uppercase tracking-widest text-xl fo">No hay operativos activos en el monitor.</div>
+    </main>
+  </div>
+</div>
+
+<script>
+// =========================================================
+// SESIÓN PERSISTENTE — guarda usuario en sessionStorage
+// Al recargar página la sesión se restaura automáticamente
+// =========================================================
+const SESSION_KEY = 'servi_session_v5';
+
+// =========================================================
+// FIREBASE — Tiempo real para todos los usuarios
+// Polling cada 4s (viewers) / 8s (admin)
+// =========================================================
+const FB_URL  = 'https://servicontrol-servi-default-rtdb.firebaseio.com';
+const FB_NODE = 'serviops_v5';
+
+let ops=[], currentUser=null, syncTimer=null, lastHash='';
+
+async function fbRead(){
+    try{
+        const r=await fetch(`${FB_URL}/${FB_NODE}.json`,{cache:'no-store'});
+        if(!r.ok)return null;
+        const raw=await r.json();
+        return raw?JSON.parse(raw):[];
+    }catch{return null;}
+}
+async function fbWrite(data){
+    try{
+        await fetch(`${FB_URL}/${FB_NODE}.json`,{
+            method:'PUT',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify(JSON.stringify(data))
+        });
+    }catch{/* fallback local */}
+    localStorage.setItem('servi_local_v5',JSON.stringify(data));
+}
+async function syncStorage(){
+    lastHash=JSON.stringify(ops);
+    await fbWrite(ops);
+    flashSync();
+}
+function flashSync(){
+    const d=document.querySelector('.sdot');if(!d)return;
+    d.style.background='#fde047';d.style.boxShadow='0 0 8px #fde047';
+    setTimeout(()=>{d.style.background='#00e05a';d.style.boxShadow='0 0 6px #00e05a';},600);
+}
+function startPolling(){
+    const ms=currentUser&&currentUser.role==='admin'?8000:4000;
+    syncTimer=setInterval(async()=>{
+        const remote=await fbRead(); if(remote===null)return;
+        const rh=JSON.stringify(remote);
+        if(rh!==lastHash){
+            lastHash=rh; ops=remote;
+            if(!document.getElementById('dashboardContent').classList.contains('hidden'))renderOps();
+            if(!document.getElementById('finishedSection').classList.contains('hidden'))renderFinished();
+            if(!document.getElementById('pendingSection').classList.contains('hidden'))renderPending();
+            updateKPIs();
+        }
+    },ms);
+}
+
+// =========================================================
+// USUARIOS
+// =========================================================
+const USERS=[
+    {username:'ADMIN',      password:'servi2024', role:'admin',  displayName:'Administrador'},
+    {username:'OPERADOR1',  password:'op1pass',   role:'viewer', displayName:'Operador 1'},
+    {username:'OPERADOR2',  password:'op2pass',   role:'viewer', displayName:'Operador 2'},
+    {username:'SUPERVISOR', password:'super123',  role:'viewer', displayName:'Supervisor'},
+    {username:'MONITOR',    password:'monitor1',  role:'viewer', displayName:'Monitor'},
+];
+
+// =========================================================
+// ARRANQUE — restaurar sesión si existe
+// =========================================================
+document.getElementById('lsid').innerText='SID-'+Math.random().toString(36).substr(2,8).toUpperCase();
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('loginScreen').style.display!=='none')doLogin();});
+
+window.addEventListener('load',async()=>{
+    const saved=sessionStorage.getItem(SESSION_KEY);
+    if(saved){
+        try{
+            const u=JSON.parse(saved);
+            const found=USERS.find(x=>x.username===u.username&&x.role===u.role);
+            if(found){
+                currentUser=found;
+                await bootApp();
+                return;
+            }
+        }catch{}
+    }
+    // Sin sesión → mostrar login
+    document.getElementById('loginScreen').style.display='flex';
+});
+
+function togglePwd(){
+    const i=document.getElementById('lpass'),ic=document.getElementById('eyeIco');
+    if(i.type==='password'){i.type='text';ic.innerHTML='<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';}
+    else{i.type='password';ic.innerHTML='<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';}
+}
+
+async function doLogin(){
+    const u=document.getElementById('luser').value.trim().toUpperCase();
+    const p=document.getElementById('lpass').value;
+    const err=document.getElementById('lerr'),btn=document.getElementById('lbtn');
+    const found=USERS.find(x=>x.username===u&&x.password===p);
+    if(!found){err.style.display='block';document.getElementById('lpass').value='';setTimeout(()=>err.style.display='none',3000);return;}
+    currentUser=found; err.style.display='none';
+    btn.innerHTML='<span style="opacity:.7">⏳ Conectando...</span>';
+    // Guardar sesión para persistencia en recarga
+    sessionStorage.setItem(SESSION_KEY,JSON.stringify({username:currentUser.username,role:currentUser.role}));
+    await bootApp();
+    btn.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> INGRESAR AL SISTEMA';
+}
+
+async function bootApp(){
+    // Cargar datos
+    const remote=await fbRead();
+    ops=remote!==null?remote:JSON.parse(localStorage.getItem('servi_local_v5')||'[]');
+    lastHash=JSON.stringify(ops);
+
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('appScreen').style.display='flex';
+    document.getElementById('syncBadge').style.display='flex';
+
+    applyRolePermissions();
+    lucide.createIcons();
+    setInterval(updateClock,1000);
+    setInterval(updateLiveInfo,1000);
+    setInterval(checkAlerts,1200000);
+    renderOps();
+    startPolling();
+
+    document.getElementById('sAvatar').innerText=currentUser.displayName[0];
+    document.getElementById('sName').innerText=currentUser.displayName.toUpperCase();
+    document.getElementById('hUser').innerText=currentUser.displayName.toUpperCase();
+    if(currentUser.role==='admin'){
+        document.getElementById('sRole').className='rbadge-a';document.getElementById('sRole').innerText='ADMINISTRATIVO';document.getElementById('hRole').innerText='ADMIN';
+    }else{
+        document.getElementById('sRole').className='rbadge-v';document.getElementById('sRole').innerText='SOLO LECTURA';document.getElementById('hRole').innerText='VIEWER';
+    }
+}
+
+function applyRolePermissions(){
+    if(currentUser.role==='admin')return;
+    document.getElementById('btnAdd').classList.add('bdis');
+    document.getElementById('btnClean').classList.add('bdis');
+    // btnExportPDF queda habilitado para todos los roles
+    const lbl=document.getElementById('lblUpload');lbl.style.opacity='.38';lbl.style.cursor='not-allowed';lbl.style.pointerEvents='none';
+}
+
+function doLogout(){
+    sessionStorage.removeItem(SESSION_KEY); // Borrar sesión guardada
+    currentUser=null; if(syncTimer){clearInterval(syncTimer);syncTimer=null;}
+    document.getElementById('appScreen').style.display='none';
+    document.getElementById('loginScreen').style.display='flex';
+    document.getElementById('luser').value='';document.getElementById('lpass').value='';
+    document.getElementById('lsid').innerText='SID-'+Math.random().toString(36).substr(2,8).toUpperCase();
+}
+
+// =========================================================
+// TABLAS DE REGLAS
+// =========================================================
+const RM=[
+    {p:2000,a:9,m:120},{p:2000,a:8,m:135},{p:2000,a:7,m:154.29},{p:2000,a:6,m:180},{p:2000,a:5,m:216},{p:2000,a:4,m:270},{p:2000,a:3,m:360},{p:2000,a:2,m:540},{p:2000,a:1,m:1080},
+    {p:1500,a:9,m:90},{p:1500,a:8,m:101.25},{p:1500,a:7,m:115.71},{p:1500,a:6,m:135},{p:1500,a:5,m:162},{p:1500,a:4,m:202.5},{p:1500,a:3,m:270},{p:1500,a:2,m:405},{p:1500,a:1,m:810},
+    {p:1000,a:9,m:60},{p:1000,a:8,m:67.5},{p:1000,a:7,m:77.14},{p:1000,a:6,m:90},{p:1000,a:5,m:108},{p:1000,a:4,m:135},{p:1000,a:3,m:180},{p:1000,a:2,m:270},{p:1000,a:1,m:540},
+    {p:900,a:9,m:54},{p:900,a:8,m:60.75},{p:900,a:7,m:69.43},{p:900,a:6,m:81},{p:900,a:5,m:97.2},{p:900,a:4,m:121.5},{p:900,a:3,m:162},{p:900,a:2,m:243},{p:900,a:1,m:486},
+    {p:800,a:9,m:48},{p:800,a:8,m:54},{p:800,a:7,m:61.71},{p:800,a:6,m:72},{p:800,a:5,m:86.4},{p:800,a:4,m:108},{p:800,a:3,m:144},{p:800,a:2,m:216},{p:800,a:1,m:432},
+    {p:700,a:9,m:42},{p:700,a:8,m:47.25},{p:700,a:7,m:54},{p:700,a:6,m:63},{p:700,a:5,m:75.6},{p:700,a:4,m:94.5},{p:700,a:3,m:126},{p:700,a:2,m:189},{p:700,a:1,m:378},
+    {p:600,a:9,m:36},{p:600,a:8,m:40.5},{p:600,a:7,m:46.29},{p:600,a:6,m:54},{p:600,a:5,m:64.8},{p:600,a:4,m:81},{p:600,a:3,m:108},{p:600,a:2,m:162},{p:600,a:1,m:324},
+    {p:500,a:9,m:30},{p:500,a:8,m:33.75},{p:500,a:7,m:38.57},{p:500,a:6,m:45},{p:500,a:5,m:54},{p:500,a:4,m:67.5},{p:500,a:3,m:90},{p:500,a:2,m:135},{p:500,a:1,m:270},
+    {p:400,a:9,m:24},{p:400,a:8,m:27},{p:400,a:7,m:30.86},{p:400,a:6,m:36},{p:400,a:5,m:43.2},{p:400,a:4,m:54},{p:400,a:3,m:72},{p:400,a:2,m:108},{p:400,a:1,m:216},
+    {p:300,a:9,m:18},{p:300,a:8,m:20.25},{p:300,a:7,m:23.14},{p:300,a:6,m:27},{p:300,a:5,m:32.4},{p:300,a:4,m:40.5},{p:300,a:3,m:54},{p:300,a:2,m:81},{p:300,a:1,m:162},
+    {p:200,a:9,m:12},{p:200,a:8,m:13.5},{p:200,a:7,m:15.43},{p:200,a:6,m:18},{p:200,a:5,m:21.6},{p:200,a:4,m:27},{p:200,a:3,m:36},{p:200,a:2,m:54},{p:200,a:1,m:108},
+    {p:100,a:9,m:6},{p:100,a:8,m:6.75},{p:100,a:7,m:7.71},{p:100,a:6,m:9},{p:100,a:5,m:10.8},{p:100,a:4,m:13.5},{p:100,a:3,m:18},{p:100,a:2,m:27},{p:100,a:1,m:54}
+];
+const RS=[
+    {p:2000,a:7,m:120},{p:2000,a:6,m:140},{p:2000,a:5,m:168},{p:2000,a:4,m:210},{p:2000,a:3,m:280},{p:2000,a:2,m:420},{p:2000,a:1,m:840},
+    {p:1500,a:7,m:90},{p:1500,a:6,m:105},{p:1500,a:5,m:126},{p:1500,a:4,m:157.5},{p:1500,a:3,m:210},{p:1500,a:2,m:315},{p:1500,a:1,m:630},
+    {p:1000,a:7,m:60},{p:1000,a:6,m:70},{p:1000,a:5,m:84},{p:1000,a:4,m:105},{p:1000,a:3,m:140},{p:1000,a:2,m:210},{p:1000,a:1,m:420},
+    {p:900,a:7,m:54},{p:900,a:6,m:63},{p:900,a:5,m:75.6},{p:900,a:4,m:94.5},{p:900,a:3,m:126},{p:900,a:2,m:189},{p:900,a:1,m:378},
+    {p:800,a:7,m:48},{p:800,a:6,m:56},{p:800,a:5,m:67.2},{p:800,a:4,m:84},{p:800,a:3,m:112},{p:800,a:2,m:168},{p:800,a:1,m:336},
+    {p:700,a:7,m:42},{p:700,a:6,m:49},{p:700,a:5,m:58.8},{p:700,a:4,m:73.5},{p:700,a:3,m:98},{p:700,a:2,m:147},{p:700,a:1,m:294},
+    {p:600,a:7,m:36},{p:600,a:6,m:42},{p:600,a:5,m:50.4},{p:600,a:4,m:63},{p:600,a:3,m:84},{p:600,a:2,m:126},{p:600,a:1,m:252},
+    {p:500,a:7,m:30},{p:500,a:6,m:35},{p:500,a:5,m:42},{p:500,a:4,m:52.5},{p:500,a:3,m:70},{p:500,a:2,m:105},{p:500,a:1,m:210},
+    {p:400,a:7,m:24},{p:400,a:6,m:28},{p:400,a:5,m:33.6},{p:400,a:4,m:42},{p:400,a:3,m:56},{p:400,a:2,m:84},{p:400,a:1,m:168},
+    {p:300,a:7,m:18},{p:300,a:6,m:21},{p:300,a:5,m:25.2},{p:300,a:4,m:31.5},{p:300,a:3,m:42},{p:300,a:2,m:63},{p:300,a:1,m:126},
+    {p:200,a:7,m:12},{p:200,a:6,m:14},{p:200,a:5,m:16.8},{p:200,a:4,m:21},{p:200,a:3,m:28},{p:200,a:2,m:42},{p:200,a:1,m:84},
+    {p:100,a:7,m:6},{p:100,a:6,m:7},{p:100,a:5,m:8.4},{p:100,a:4,m:10.5},{p:100,a:3,m:14},{p:100,a:2,m:21},{p:100,a:1,m:42}
+];
+
+function getTiempoEstandar(v,p,a){
+    const t=v==='Tractomula'?RM:RS;
+    let r=t.find(x=>x.p===p&&x.a===a); if(r)return r.m;
+    const ps=[...new Set(t.map(x=>x.p))].sort((a,b)=>b-a);
+    const pr=ps.find(x=>x<=p)||ps[ps.length-1];
+    const am=v==='Tractomula'?9:7; const ar=Math.min(Math.max(1,a),am);
+    r=t.find(x=>x.p===pr&&x.a===ar);
+    return r?(r.m*p)/pr:(p/1000)*(60/a);
+}
+function calcETA(op){
+    if(!op.start)return'--:--';
+    const em=getTiempoEstandar(op.vehicle,op.total,op.aux||1);
+    const[h,m]=op.start.split(':').map(Number); const s=new Date(); s.setHours(h,m,0,0);
+    return new Date(s.getTime()+em*60000).toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',hour12:true});
+}
+function calcEff(op){
+    if(op.status==='terminado'&&op.finalEfficiency!==null)return op.finalEfficiency;
+    if(!op.start||!op.downloaded)return 0;
+    const[h,m]=op.start.split(':').map(Number); const st=new Date(); st.setHours(h,m,0,0);
+    const dm=Math.max(.5,(new Date()-st)/60000);
+    const te=getTiempoEstandar(op.vehicle,op.total,op.aux||1);
+    const e=((op.downloaded/op.total)/(dm/te))*100;
+    return Math.min(150,Math.max(0,isNaN(e)?0:e));
+}
+
+// =========================================================
+// RELOJ Y LIVE UPDATES
+// =========================================================
+function updateClock(){
+    document.getElementById('clock').innerText=new Date().toLocaleTimeString('es-CO',{hour12:true,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+function updateLiveInfo(){
+    ops.forEach(op=>{
+        if(op.status!=='activo')return;
+        const eff=Math.round(calcEff(op));
+        const ee=document.getElementById(`eff-${op.id}`);
+        const te=document.getElementById(`timer-${op.id}`);
+        const et=document.getElementById(`eta-${op.id}`);
+        const be=document.getElementById(`bar-${op.id}`);
+        const ce=document.getElementById(`card-${op.id}`);
+        if(te)te.innerText=getElapsed(op.start);
+        if(et)et.innerText=calcETA(op);
+        if(ee){ee.innerText=eff+'%';ee.className=eff<50?'knum ered':'knum egreen';}
+        if(be){const pg=Math.min(100,Math.round((op.downloaded/op.total)*100));be.style.width=pg+'%';be.className='pfill '+(eff<50?'bred':'bgreen');}
+        if(ce)ce.className='ocard '+(eff<50?'cinef':'ceff');
+    });
+    updateKPIs();
+}
+
+// =========================================================
+// ALERTAS
+// =========================================================
+function checkAlerts(){
+    const bad=ops.filter(o=>o.status==='activo'&&calcEff(o)<50); if(!bad.length)return;
+    const msg=bad.map(o=>{const e=Math.round(calcEff(o));const s=e===0?'deficientes':e<30?'con poco flujo':'atrasados';return`El operativo ${o.name} solicita agilizar el descargue, lineamientos ${s}.`;}).join(' | ');
+    toastAlert(msg);
+}
+function toastAlert(msg){
+    const t=document.getElementById('toast');t.style.background='linear-gradient(135deg,#dc2626,#991b1b)';
+    document.getElementById('toastMsg').innerHTML='⚠️ '+msg;t.classList.add('show');
+    window.speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(msg); u.lang='es-CO'; u.rate=.95;
+    u.onend=()=>t.classList.remove('show'); u.onerror=()=>t.classList.remove('show');
+    window.speechSynthesis.speak(u);
+}
+function toastOk(msg){
+    const t=document.getElementById('toast');t.style.background='linear-gradient(135deg,#009639,#007a2e)';
+    document.getElementById('toastMsg').innerHTML=msg;t.classList.add('show');
+    setTimeout(()=>{t.classList.remove('show');t.style.background='';},4500);
+}
+
+// =========================================================
+// SIDEBAR
+// =========================================================
+function toggleSidebar(){
+    document.getElementById('sidebar').classList.toggle('shide');
+    document.getElementById('openBtn').classList.toggle('hidden');
+}
+
+// =========================================================
+// SECCIONES
+// =========================================================
+function showSection(s){
+    ['newForm','dashboardContent','finishedSection','pendingSection','noData','endOfDayMessage'].forEach(x=>document.getElementById(x).classList.add('hidden'));
+    if(s==='list'){document.getElementById('dashboardContent').classList.remove('hidden');renderOps();}
+    else if(s==='new'){if(!currentUser||currentUser.role!=='admin')return;document.getElementById('newForm').classList.remove('hidden');}
+    else if(s==='finished'){document.getElementById('finishedSection').classList.remove('hidden');renderFinished();}
+    else if(s==='pending'){document.getElementById('pendingSection').classList.remove('hidden');renderPending();}
+    else if(s==='endMessage'){document.getElementById('endOfDayMessage').classList.remove('hidden');createConfetti();lucide.createIcons();}
+}
+
+// =========================================================
+// NUEVO OPERATIVO
+// =========================================================
+async function saveNew(){
+    if(!currentUser||currentUser.role!=='admin')return;
+    const n=document.getElementById('fName').value.trim().toUpperCase();
+    const pe=document.getElementById('fPerson').value.trim().toUpperCase();
+    const to=parseInt(document.getElementById('fTotal').value);
+    const au=parseInt(document.getElementById('fAux').value);
+    const ve=document.getElementById('fVehicle').value;
+    const pl=document.getElementById('fPlate').value.trim().toUpperCase().replace(/\s/g,'');
+    const st=document.getElementById('fStartTime').value||null; // Opcional HH:MM
+    if(!n||!pe||isNaN(to)||isNaN(au)||!pl){alert('Completa todos los campos obligatorios.');return;}
+    // Si se indicó hora de inicio manual, el operativo arranca directamente como activo
+    const status=st?'activo':'pendiente';
+    ops.push({id:Date.now(),name:n,person:pe,total:to,aux:au,vehicle:ve,plate:pl,downloaded:0,status:status,start:st,finishTime:null,finalEfficiency:null,durationSeconds:0,finalDuration:''});
+    await syncStorage();
+    ['fName','fPerson','fTotal','fAux','fPlate','fStartTime'].forEach(i=>document.getElementById(i).value='');
+    showSection(st?'list':'pending');
+}
+
+// =========================================================
+// PENDIENTES
+// =========================================================
+function renderPending(){
+    const g=document.getElementById('pendingGrid');
+    const ps=ops.filter(o=>o.status==='pendiente'); g.innerHTML='';
+    if(!ps.length){g.innerHTML='<p class="col-span-3 text-center py-10 text-gray-300 font-black uppercase tracking-widest fo">Sin operativos pendientes.</p>';return;}
+    const ia=currentUser&&currentUser.role==='admin';
+    ps.forEach(op=>{
+        const c=document.createElement('div'); c.className='ocard';
+        c.innerHTML=`
+        <div style="padding:16px 20px 12px;border-bottom:1px solid #f3f4f6" class="flex justify-between items-start">
+            <h4 class="fo text-2xl font-bold text-gray-800 uppercase">${op.name}</h4>
+            <span class="pbadge">${op.plate}</span>
+        </div>
+        <div style="padding:16px 20px;flex:1">
+            <div class="grid grid-cols-2 gap-3 text-base font-bold text-gray-600">
+                <div><span class="flbl">Vehículo</span>${op.vehicle}</div>
+                <div><span class="flbl">Encargado</span>${op.person}</div>
+                <div><span class="flbl">Piezas</span>${op.total.toLocaleString()}</div>
+                <div><span class="flbl">Auxiliares</span>${op.aux}</div>
+                <div class="col-span-2"><span class="flbl">T. Estándar</span><span style="color:var(--green);font-size:1.1em">${Math.round(getTiempoEstandar(op.vehicle,op.total,op.aux))} min</span></div>
+            </div>
+        </div>
+        <div style="padding:12px 20px 16px">
+            <button onclick="startOp(${op.id})" class="w-full btn py-3 rounded-xl text-sm ${ia?'':'bdis'}">▶ INICIAR OPERATIVO</button>
+        </div>`;
+        g.appendChild(c);
+    });
+}
+
+async function startOp(id){
+    if(!currentUser||currentUser.role!=='admin')return;
+    const op=ops.find(o=>o.id===id); if(!op)return;
+    const n=new Date(); op.start=n.getHours().toString().padStart(2,'0')+':'+n.getMinutes().toString().padStart(2,'0');
+    op.status='activo'; await syncStorage(); showSection('list');
+}
+
+// =========================================================
+// RENDER ACTIVOS — Grid autoajustable según cantidad
+// =========================================================
+function renderOps(){
+    const g=document.getElementById('opGrid');
+    const ac=ops.filter(o=>o.status==='activo');
+    const pe=ops.filter(o=>o.status==='pendiente');
+    g.innerHTML='';
+    if(ops.length>0&&ac.length===0&&pe.length===0)return showSection('endMessage');
+    if(!ac.length){document.getElementById('noData').classList.remove('hidden');return;}
+    document.getElementById('noData').classList.add('hidden');
+    const ia=currentUser&&currentUser.role==='admin';
+
+    // Clase de grid según cantidad de tarjetas
+    const n=ac.length;
+    g.className=n===1?'g1':n===2?'g2':n===3?'g3':'g4';
+
+    const sorted=[...ac].sort((a,b)=>{const ea=calcEff(a),eb=calcEff(b);if(ea<50&&eb>=50)return-1;if(ea>=50&&eb<50)return 1;return ea-eb;});
+    sorted.forEach(op=>{
+        const eff=Math.round(calcEff(op));
+        const prog=Math.min(100,Math.round((op.downloaded/op.total)*100));
+        const inef=eff<50;
+        const c=document.createElement('div');
+        c.id=`card-${op.id}`;
+        c.className='ocard '+(inef?'cinef':'ceff');
+        c.innerHTML=`
+        <!-- CABECERA -->
+        <div style="padding:18px 20px 14px;border-bottom:1px solid #f3f4f6">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h4 class="fo font-bold text-gray-800 uppercase" style="font-size:1.6rem;line-height:1">${op.name}</h4>
+                    <div class="flex items-center gap-2 mt-2">
+                        <span class="vbadge">${op.vehicle}</span>
+                        ${inef?'<span class="wbadge">⚠ INEFICIENTE</span>':''}
+                    </div>
+                </div>
+                <div class="flex flex-col items-end gap-1">
+                    <span class="pbadge">${op.plate}</span>
+                    ${ia?`<button onclick="openEditModal(${op.id})" style="font-size:10px;font-weight:800;color:#009639;cursor:pointer;background:none;border:none;letter-spacing:1px;text-transform:uppercase;padding:3px 0;margin-top:2px" class="hover:opacity-70 transition">✏ EDITAR TODO</button>`:''}
+                </div>
+            </div>
+        </div>
+        <!-- CUERPO -->
+        <div style="padding:16px 20px;flex:1">
+            <!-- Encargado y Eficiencia en grande -->
+            <div class="flex justify-between items-start" style="margin-bottom:14px">
+                <div>
+                    <span class="flbl">Encargado</span>
+                    <p class="fo font-bold text-gray-800 uppercase" style="font-size:1.3rem;line-height:1.1">${op.person}</p>
+                </div>
+                <div class="text-right">
+                    <span class="flbl">Eficiencia</span>
+                    <p id="eff-${op.id}" class="fo knum ${inef?'ered':'egreen'}" style="font-size:2.6rem">${eff}%</p>
+                </div>
+            </div>
+            <!-- Auxiliares -->
+            <div style="margin-bottom:14px">
+                <span class="flbl">Auxiliares</span>
+                <p class="fo font-bold text-gray-700" style="font-size:1.2rem">${op.aux} personas</p>
+            </div>
+            <!-- Piezas con barra -->
+            <div style="margin-bottom:6px">
+                <div class="flex justify-between items-center" style="margin-bottom:6px">
+                    <div>
+                        <span class="flbl">Piezas Descargadas</span>
+                        <span class="fo font-bold" style="font-size:1.5rem;color:var(--green)">${op.downloaded.toLocaleString()}</span>
+                        <span class="fo font-bold text-gray-400" style="font-size:1.1rem"> / ${op.total.toLocaleString()}</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="flbl">Progreso</span>
+                        <span class="fo font-bold" style="font-size:1.4rem;color:${inef?'var(--red)':'var(--green)'}">${prog}%</span>
+                    </div>
+                </div>
+                <div class="pbar"><div id="bar-${op.id}" class="pfill ${inef?'bred':'bgreen'}" style="width:${prog}%"></div></div>
+            </div>
+            <!-- Tiempos -->
+            <div class="trow">
+                <div class="tblk">
+                    <span class="flbl" style="display:block;text-align:center;margin-bottom:3px">Inicio Op.</span>
+                    <p class="fo font-bold" style="color:#475569;text-align:center;font-size:1.2rem;line-height:1">${op.start||'--:--'}</p>
+                </div>
+                <div class="tdiv"></div>
+                <div class="tblk">
+                    <span class="flbl" style="display:block;text-align:center;margin-bottom:3px">H. Est. Terminado</span>
+                    <p id="eta-${op.id}" class="fo font-bold" style="color:var(--green);text-align:center;font-size:1.4rem;line-height:1">${calcETA(op)}</p>
+                </div>
+                <div class="tdiv"></div>
+                <div class="tblk">
+                    <span class="flbl" style="display:block;text-align:center;margin-bottom:3px">Tiempo Transcurrido</span>
+                    <p id="timer-${op.id}" class="fm font-bold" style="color:#0a0a0a;text-align:center;font-size:1.3rem;line-height:1">${getElapsed(op.start)}</p>
+                </div>
+            </div>
+        </div>
+        <!-- FOOTER -->
+        <div style="padding:12px 20px 16px">
+            <button onclick="confirmFinishOp(${op.id})" class="w-full btn py-3 rounded-xl text-sm ${ia?'':'bdis'}">✓ TERMINAR OPERATIVO</button>
+        </div>`;
+        g.appendChild(c);
+    });
+    lucide.createIcons();
+}
+
+// =========================================================
+// EDIT MODAL — Completo (placa, nombre, tipo, persona, aux, total)
+// =========================================================
+let curEditId=null;
+function openEditModal(id){
+    if(!currentUser||currentUser.role!=='admin')return;
+    curEditId=id;
+    const o=ops.find(x=>x.id===id); if(!o)return;
+    document.getElementById('eName').value=o.name;
+    document.getElementById('ePlate').value=o.plate;
+    document.getElementById('eVehicle').value=o.vehicle;
+    document.getElementById('ePerson').value=o.person;
+    document.getElementById('eAux').value=o.aux;
+    document.getElementById('eTotal').value=o.total;
+    document.getElementById('eStartTime').value=o.start||'';
+    document.getElementById('eModal').style.display='flex';
+}
+function closeEditModal(){document.getElementById('eModal').style.display='none';}
+async function saveEdit(){
+    if(!currentUser||currentUser.role!=='admin')return;
+    const o=ops.find(x=>x.id===curEditId); if(!o)return;
+    o.name   = document.getElementById('eName').value.trim().toUpperCase()||o.name;
+    o.plate  = document.getElementById('ePlate').value.trim().toUpperCase().replace(/\s/g,'')||o.plate;
+    o.vehicle= document.getElementById('eVehicle').value;
+    o.person = document.getElementById('ePerson').value.trim().toUpperCase()||o.person;
+    o.aux    = parseInt(document.getElementById('eAux').value)||o.aux;
+    o.total  = parseInt(document.getElementById('eTotal').value)||o.total;
+    const st = document.getElementById('eStartTime').value;
+    if(st) o.start=st; // Solo actualiza si se ingresó un valor
+    await syncStorage(); closeEditModal(); renderOps();
+    toastOk('✅ Operativo actualizado y sincronizado en tiempo real');
+}
+
+// =========================================================
+// RENDER HISTORIAL
+// =========================================================
+function renderFinished(){
+    const g=document.getElementById('finishedGrid');
+    const fi=ops.filter(o=>o.status==='terminado'); g.innerHTML='';
+    let ts=0,tp=0,se=0;
+    fi.forEach(op=>{
+        ts+=op.durationSeconds||0; tp+=op.downloaded||0; se+=op.finalEfficiency||0;
+        const c=document.createElement('div'); c.className='hcard';
+        const eff=Math.round(op.finalEfficiency||0);
+        c.innerHTML=`
+        <div class="flex justify-between items-start mb-4">
+            <h4 class="fo text-2xl font-bold text-gray-800 uppercase">${op.name}</h4>
+            <span class="pbadge">${op.plate}</span>
+        </div>
+        <div class="grid grid-cols-2 gap-3 mb-4 text-base font-bold text-gray-600">
+            <div><span class="flbl">Vehículo</span>${op.vehicle}</div>
+            <div><span class="flbl">Encargado</span>${op.person}</div>
+            <div><span class="flbl">Inicio</span>${op.start}</div>
+            <div><span class="flbl">Fin</span>${op.finishTime}</div>
+            <div><span class="flbl">Piezas</span>${op.downloaded.toLocaleString()} / ${op.total.toLocaleString()}</div>
+            <div><span class="flbl">Eficiencia</span><span class="fo" style="color:${eff>=50?'var(--green)':'var(--red)'};font-size:1.4rem;font-weight:900">${eff}%</span></div>
+        </div>
+        <div class="htbox text-center">
+            <span class="flbl block mb-1">Duración Total</span>
+            <span class="fo text-3xl font-bold" style="color:var(--green)">${op.finalDuration}</span>
+        </div>`;
+        g.appendChild(c);
+    });
+    document.getElementById('kpiTTime').innerText=formatSeconds(ts);
+    document.getElementById('kpiTPieces').innerText=tp.toLocaleString();
+    document.getElementById('kpiTEff').innerText=(fi.length?Math.round(se/fi.length):0)+'%';
+}
+
+// =========================================================
+// TERMINAR OPERATIVO
+// =========================================================
+function confirmFinishOp(id){
+    if(!currentUser||currentUser.role!=='admin')return;
+    openModal('¿Finalizar operativo?','El operativo pasará al historial. Los operativos activos no se verán afectados.',async()=>{
+        const op=ops.find(o=>o.id===id); if(!op)return;
+        const[h,m]=op.start.split(':').map(Number); const st=new Date(); st.setHours(h,m,0,0);
+        const diff=Math.floor((new Date()-st)/1000);
+        op.finalEfficiency=calcEff(op); op.status='terminado';
+        op.finishTime=new Date().toLocaleTimeString('es-CO',{hour12:true,hour:'2-digit',minute:'2-digit'});
+        op.durationSeconds=diff>0?diff:0; op.finalDuration=formatSeconds(op.durationSeconds);
+        await syncStorage(); renderOps();
+    });
+}
+
+// LIMPIAR HISTORIAL — solo borra terminados, NO toca activos ni pendientes
+function confirmClearHistory(){
+    if(!currentUser||currentUser.role!=='admin')return;
+    const count=ops.filter(o=>o.status==='terminado').length;
+    if(!count){toastOk('ℹ️ No hay operativos terminados para limpiar.');return;}
+    openModal('¿Limpiar historial?',`Se eliminarán ${count} operativo(s) terminado(s). Los operativos activos y pendientes NO se verán afectados.`,async()=>{
+        ops=ops.filter(o=>o.status!=='terminado'); // Solo elimina los terminados
+        await syncStorage(); renderFinished();
+        toastOk(`✅ Historial limpiado. Operativos activos intactos.`);
+    });
+}
+
+// =========================================================
+// KPIs
+// =========================================================
+function updateKPIs(){
+    const t=ops.reduce((s,o)=>s+o.downloaded,0);
+    document.getElementById('kpiTotal').innerText=t.toLocaleString();
+    const st=ops.filter(o=>o.status==='activo'||o.status==='terminado');
+    const se=st.reduce((s,o)=>{const v=calcEff(o);return s+(isNaN(v)?0:v);},0);
+    const avg=st.length?Math.round(se/st.length):0;
+    const ke=document.getElementById('kpiEff');
+    ke.innerText=(isNaN(avg)?0:avg)+'%';
+    ke.style.color=avg<50?'var(--red)':'var(--green)';
+}
+
+// =========================================================
+// EXCEL — Suma valores de col A agrupados por col C (PLACA)
+// =========================================================
+function handleFileUpload(event){
+    if(!currentUser||currentUser.role!=='admin')return;
+    const file=event.target.files[0]; if(!file)return;
+    const reader=new FileReader();
+    reader.onload=async e=>{
+        try{
+            const wb=XLSX.read(e.target.result,{type:'binary'});
+            const sheet=wb.Sheets[wb.SheetNames[0]];
+            const rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:''});
+            const sumas={};
+            rows.forEach((row,idx)=>{
+                if(idx===0)return; // saltar encabezado
+                const colA=row[0]; // PIEZAS
+                const colC=row[2]; // PLACA
+                if(!colC||String(colC).trim()==='')return;
+                const placa=String(colC).trim().toUpperCase().replace(/\s/g,'');
+                const num=Number(colA);
+                const piezas=(!isNaN(num)&&num>0)?num:(String(colA).trim()!==''?1:0);
+                if(piezas>0)sumas[placa]=(sumas[placa]||0)+piezas;
+            });
+            let updated=0;
+            for(const p in sumas){
+                const op=ops.find(o=>o.plate===p&&o.status==='activo');
+                if(op){op.downloaded=sumas[p];updated++;}
+            }
+            await syncStorage();
+            renderOps();
+            event.target.value='';
+            const total=Object.values(sumas).reduce((a,b)=>a+b,0);
+            toastOk(`✅ Excel cargado · ${total.toLocaleString()} piezas en ${Object.keys(sumas).length} placa(s) · ${updated} operativo(s) actualizado(s) · todos los usuarios ya lo ven`);
+        }catch(err){
+            alert('Error al leer el archivo: '+err.message);
+            event.target.value='';
+        }
+    };
+    reader.readAsBinaryString(file);
+}
+
+// =========================================================
+// HELPERS
+// =========================================================
+function getElapsed(start){
+    if(!start)return'00:00:00';
+    const[h,m]=start.split(':').map(Number); const st=new Date(); st.setHours(h,m,0,0);
+    return formatSeconds(Math.max(0,Math.floor((new Date()-st)/1000)));
+}
+function formatSeconds(s){
+    if(s<0)return'00:00:00';
+    const h=Math.floor(s/3600),mn=Math.floor((s%3600)/60),sc=s%60;
+    return`${h.toString().padStart(2,'0')}:${mn.toString().padStart(2,'0')}:${sc.toString().padStart(2,'0')}`;
+}
+
+// =========================================================
+// MODAL
+// =========================================================
+function openModal(t,m,cb){
+    document.getElementById('mTitle').innerText=t;
+    document.getElementById('mMsg').innerText=m;
+    document.getElementById('mIcon').innerHTML='<i data-lucide="help-circle" size="56" style="color:var(--green)"></i>';
+    lucide.createIcons();
+    document.getElementById('cModal').style.display='flex';
+    document.getElementById('mOk').onclick=()=>{cb();closeModal();};
+}
+function closeModal(){document.getElementById('cModal').style.display='none';}
+
+// =========================================================
+// EXPORTAR HISTORIAL EXCEL
+// =========================================================
+function exportHistorialExcel(){
+    const fi=ops.filter(o=>o.status==='terminado');
+    if(!fi.length){toastOk('ℹ️ No hay operativos terminados para exportar.');return;}
+
+    const now=new Date().toLocaleString('es-CO',{dateStyle:'short',timeStyle:'short'});
+    const generadoPor=currentUser?currentUser.displayName.toUpperCase():'SISTEMA';
+
+    // ── Hoja 1: Detalle de operativos ──
+    const headers=[
+        'N°','Nombre del Operativo','Placa','Tipo de Vehículo',
+        'Persona a Cargo','Hora de Inicio','Hora de Fin',
+        'Piezas Descargadas','Piezas Totales','Tiempo Transcurrido','Eficiencia (%)'
+    ];
+    const dataRows=fi.map((op,i)=>[
+        i+1,
+        op.name,
+        op.plate,
+        op.vehicle,
+        op.person,
+        op.start||'—',
+        op.finishTime||'—',
+        op.downloaded||0,
+        op.total||0,
+        op.finalDuration||'—',
+        Math.round(op.finalEfficiency||0)
+    ]);
+
+    // ── Hoja 2: Resumen ──
+    let ts=0,tp=0,se=0;
+    fi.forEach(op=>{ts+=op.durationSeconds||0;tp+=op.downloaded||0;se+=op.finalEfficiency||0;});
+    const avgEff=fi.length?Math.round(se/fi.length):0;
+    const resumenRows=[
+        ['RESUMEN DEL HISTORIAL'],
+        ['Generado',now],
+        ['Generado por',generadoPor],
+        [],
+        ['Total Operativos',fi.length],
+        ['Total Piezas Descargadas',tp],
+        ['Tiempo Total Operación',formatSeconds(ts)],
+        ['Eficiencia Promedio',avgEff+'%'],
+    ];
+
+    const wb=XLSX.utils.book_new();
+
+    // Hoja Detalle
+    const wsData=[headers,...dataRows];
+    const ws=XLSX.utils.aoa_to_sheet(wsData);
+
+    // Anchos de columna
+    ws['!cols']=[
+        {wch:5},{wch:22},{wch:12},{wch:16},
+        {wch:20},{wch:13},{wch:13},
+        {wch:18},{wch:14},{wch:18},{wch:14}
+    ];
+
+    // Estilos encabezado (fondo verde, texto blanco, negrita)
+    const greenFill={fgColor:{rgb:'009639'}};
+    const whiteBold={bold:true,color:{rgb:'FFFFFF'}};
+    const centerAlign={horizontal:'center',vertical:'center'};
+    const border={top:{style:'thin',color:{rgb:'CCCCCC'}},bottom:{style:'thin',color:{rgb:'CCCCCC'}},left:{style:'thin',color:{rgb:'CCCCCC'}},right:{style:'thin',color:{rgb:'CCCCCC'}}};
+
+    headers.forEach((_,c)=>{
+        const addr=XLSX.utils.encode_cell({r:0,c});
+        if(!ws[addr])return;
+        ws[addr].s={fill:greenFill,font:whiteBold,alignment:centerAlign,border};
+    });
+
+    // Estilos filas de datos — alternar colores, centrar, borde
+    dataRows.forEach((_,r)=>{
+        const rowIdx=r+1;
+        const fillColor=r%2===0?'F0F4F2':'FFFFFF';
+        headers.forEach((_,c)=>{
+            const addr=XLSX.utils.encode_cell({r:rowIdx,c});
+            if(!ws[addr])return;
+            const eff=dataRows[r][10];
+            // Columna eficiencia: color rojo o verde
+            let fontColor='1E293B';
+            if(c===10) fontColor=eff>=50?'009639':'DC2626';
+            ws[addr].s={
+                fill:{fgColor:{rgb:fillColor}},
+                font:{bold:c===0||c===10,color:{rgb:fontColor}},
+                alignment:{horizontal:c===0||c>=7?'center':'left',vertical:'center'},
+                border
+            };
+        });
+    });
+
+    // Fila de totales al final
+    const totalRow=[
+        'TOTAL','','','','','','',
+        fi.reduce((s,o)=>s+(o.downloaded||0),0),
+        fi.reduce((s,o)=>s+(o.total||0),0),
+        '',
+        avgEff
+    ];
+    XLSX.utils.sheet_add_aoa(ws,[totalRow],{origin:-1});
+    const totalRowIdx=wsData.length;
+    headers.forEach((_,c)=>{
+        const addr=XLSX.utils.encode_cell({r:totalRowIdx,c});
+        if(!ws[addr])return;
+        ws[addr].s={
+            fill:{fgColor:{rgb:'0A0A0A'}},
+            font:{bold:true,color:{rgb:'FFFFFF'}},
+            alignment:{horizontal:'center',vertical:'center'},
+            border
+        };
+    });
+
+    XLSX.utils.book_append_sheet(wb,ws,'Operativos');
+
+    // Hoja Resumen
+    const ws2=XLSX.utils.aoa_to_sheet(resumenRows);
+    ws2['!cols']=[{wch:28},{wch:22}];
+    // Título resumen en verde
+    if(ws2['A1']) ws2['A1'].s={font:{bold:true,sz:14,color:{rgb:'009639'}},fill:{fgColor:{rgb:'F0F4F2'}}};
+    XLSX.utils.book_append_sheet(wb,ws2,'Resumen');
+
+    // Nombre del archivo con fecha
+    const fecha=new Date().toISOString().slice(0,10);
+    XLSX.writeFile(wb,`Historial_Operativos_Servientrega_${fecha}.xlsx`);
+    toastOk('✅ Excel exportado correctamente');
+}
+
+function createConfetti(){
+    const con=document.getElementById('confC');
+    for(let i=0;i<50;i++){
+        const c=document.createElement('div'); c.className='conf';
+        c.style.left=Math.random()*100+'vw'; c.style.animationDelay=Math.random()*3+'s';
+        c.style.backgroundColor=['#009639','#00b341','#ffffff','#fde047','#00c347'][Math.floor(Math.random()*5)];
+        const sz=Math.random()*10+4+'px'; c.style.width=sz; c.style.height=sz;
+        c.style.borderRadius=Math.random()>.5?'50%':'2px';
+        con.appendChild(c); setTimeout(()=>c.remove(),4500);
+    }
+}
+</script>
+</body>
+</html>
